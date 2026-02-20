@@ -1,6 +1,6 @@
 // context/PlaylistContext.jsx
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import axios from 'axios';
+import React, { createContext, useState, useContext, useEffect } from "react";
+import axios from "axios";
 
 const PlaylistContext = createContext();
 
@@ -15,22 +15,25 @@ export const PlaylistProvider = ({ children }) => {
     const initializeApp = async () => {
       try {
         axios.defaults.withCredentials = true;
-        
+
         // Check if we're authenticated with Spotify
         const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/auth/status`
+          `${import.meta.env.VITE_BACKEND_URL}/api/auth/status`,
+          {
+            withCredentials: true,
+          },
         );
 
         if (response.data.isAuthenticated) {
           setUser(response.data.user);
-          setMode('login');
+          setMode("login");
           await fetchPlaylists();
         } else {
-          setMode('url');
+          setMode("url");
         }
       } catch (error) {
-        console.error('Auth check failed:', error);
-        setMode('url');
+        console.error("Auth check failed:", error);
+        setMode("url");
       } finally {
         setLoading(false);
       }
@@ -42,12 +45,12 @@ export const PlaylistProvider = ({ children }) => {
   const fetchPlaylists = async () => {
     try {
       const response = await axios.get(
-        `${import.meta.env.VITE_BACKEND_URL}/api/playlist/user`
+        `${import.meta.env.VITE_BACKEND_URL}/api/playlist/user`,
       );
       setPlaylists(response.data.playlists || []);
-      setMode('login');
+      setMode("login");
     } catch (error) {
-      console.error('Failed to fetch playlists:', error);
+      console.error("Failed to fetch playlists:", error);
       setPlaylists([]);
     }
   };
@@ -55,7 +58,7 @@ export const PlaylistProvider = ({ children }) => {
   // For URL mode - just set the playlists directly
   const setUrlPlaylists = (urlPlaylists) => {
     setPlaylists(urlPlaylists);
-    setMode('url');
+    setMode("url");
     setUser(null); // Clear user data in URL mode
   };
 
@@ -63,17 +66,21 @@ export const PlaylistProvider = ({ children }) => {
   const setLoginData = (userData, userPlaylists = []) => {
     setUser(userData);
     setPlaylists(userPlaylists);
-    setMode('login');
+    setMode("login");
   };
 
   const logout = async () => {
-    if (mode === 'login') {
+    if (mode === "login") {
       try {
-        await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/auth/logout`, {}, {
-          withCredentials: true
-        });
+        await axios.post(
+          `${import.meta.env.VITE_BACKEND_URL}/api/auth/logout`,
+          {},
+          {
+            withCredentials: true,
+          },
+        );
       } catch (error) {
-        console.error('Logout error:', error);
+        console.error("Logout error:", error);
       }
     }
     // Clear all state
@@ -91,7 +98,7 @@ export const PlaylistProvider = ({ children }) => {
     setUrlPlaylists,
     setLoginData,
     fetchPlaylists,
-    logout
+    logout,
   };
 
   return (
@@ -104,7 +111,9 @@ export const PlaylistProvider = ({ children }) => {
 export const usePlaylistContext = () => {
   const context = useContext(PlaylistContext);
   if (!context) {
-    throw new Error('usePlaylistContext must be used within a PlaylistProvider');
+    throw new Error(
+      "usePlaylistContext must be used within a PlaylistProvider",
+    );
   }
   return context;
 };

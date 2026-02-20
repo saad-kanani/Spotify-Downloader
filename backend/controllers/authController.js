@@ -23,14 +23,21 @@ const generateRandomString = (length) => {
 var stateKey = "spotify_auth_state";
 
 export const loginWithSpotify = (req, res) => {
-  const state = generateRandomString(16);
-  res.cookie(stateKey, state);
+  try {
+    const state = generateRandomString(16);
+    res.cookie(stateKey, state);
 
-  const authURL = `https://accounts.spotify.com/authorize?response_type=code&client_id=${CLIENT_ID}&scope=${encodeURIComponent(
-    SCOPES
-  )}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&state=${state}`;
+    const authURL = `https://accounts.spotify.com/authorize?response_type=code&client_id=${CLIENT_ID}&scope=${encodeURIComponent(
+      SCOPES,
+    )}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&state=${state}`;
 
-  res.redirect(authURL);
+    console.log("Redirecting to Spotify...");
+
+    return res.redirect(authURL); // 👈 IMPORTANT
+  } catch (error) {
+    console.error("Login error:", error);
+    return res.status(500).send("Login failed");
+  }
 };
 
 // In your exchangeSpotifyCode function - add logging
@@ -58,7 +65,7 @@ export const exchangeSpotifyCode = async (req, res) => {
     params.append("redirect_uri", REDIRECT_URI);
 
     const authToken = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString(
-      "base64"
+      "base64",
     );
 
     const tokenRes = await axios.post(
@@ -69,7 +76,7 @@ export const exchangeSpotifyCode = async (req, res) => {
           Authorization: `Basic ${authToken}`,
           "Content-Type": "application/x-www-form-urlencoded",
         },
-      }
+      },
     );
 
     const { access_token, refresh_token } = tokenRes.data;
@@ -78,39 +85,33 @@ export const exchangeSpotifyCode = async (req, res) => {
 
     res.cookie("spotify_access_token", access_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax", // Use 'lax' instead of 'strict'
+      secure: false,
+      sameSite: "lax",
       maxAge: 3600000,
-      domain:
-        process.env.NODE_ENV === "production" ? "yourdomain.com" : "localhost", // Explicit domain
-      path: "/", // Explicit path
     });
 
+    // Refresh token
     res.cookie("spotify_refresh_token", refresh_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
       sameSite: "lax",
       maxAge: 30 * 24 * 3600000,
-      domain:
-        process.env.NODE_ENV === "production" ? "yourdomain.com" : "localhost",
-      path: "/",
     });
 
     console.log(
       "✅ Cookies set with domain:",
-      process.env.NODE_ENV === "production" ? "yourdomain.com" : "localhost"
+      process.env.NODE_ENV === "production" ? "yourdomain.com" : "localhost",
     );
     res.redirect(FRONTEND_URL + "/callback");
   } catch (err) {
     console.error(
       "❌ Token exchange error:",
-      err.response?.data || err.message
+      err.response?.data || err.message,
     );
     res.clearCookie(stateKey);
     return res.redirect(`${FRONTEND_URL}?error=authentication_failed`);
   }
 };
-
 
 export const getAuthStatus = async (req, res) => {
   try {
@@ -153,7 +154,7 @@ export const getAuthStatus = async (req, res) => {
   } catch (error) {
     console.error(
       "❌ Auth status check error:",
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
 
     // Token is invalid/expired - clear cookies
