@@ -16,9 +16,9 @@
   <img src="https://img.shields.io/badge/TailwindCSS-3.x-06B6D4?logo=tailwindcss" alt="TailwindCSS"/>
 </p>
 
-## Demo
+## Demo Video
 
-[Live Demo](https://spotify-downloader-demo.vercel.app/)
+[Watch the demo video](https://drive.google.com/file/d/1dvNQZKL6-51E14BLlShv6K64vo9jhOTl/view?usp=sharing)
 
 ## Description
 
