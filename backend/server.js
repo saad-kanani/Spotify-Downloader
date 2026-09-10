@@ -55,7 +55,7 @@ app.get("/", (req, res) => {
 // ✅ Use routes
 app.use("/api/playlist", playlistRoute);
 app.use("/api/stream", streamRoute(io));
-app.use("/api/download-zip", downloadZipRouter);
+app.use("/api/download-zip", downloadZipRouter(io));
 
 server.listen(port, () =>
   console.log("Server Started http://localhost:" + port),

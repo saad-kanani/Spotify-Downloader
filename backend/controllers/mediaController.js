@@ -1,6 +1,7 @@
 import { fetchMedia } from "../services/spotapiService.js";
 
-const spotifyUrlPattern = /(?:spotify:(track|album|playlist):|(track|album|playlist)\/)([a-zA-Z0-9]+)/i;
+const spotifyUrlPattern =
+  /(?:spotify:(track|album|playlist):|(track|album|playlist)\/)([a-zA-Z0-9]+)/i;
 
 const fetchMediaFromUrl = async (req, res) => {
   const input = typeof req.body?.url === "string" ? req.body.url.trim() : "";
@@ -19,7 +20,9 @@ const fetchMediaFromUrl = async (req, res) => {
     return res.json([media]);
   } catch (error) {
     console.error("SpotAPI media fetch error:", error.message);
-    return res.status(502).json({ error: "Failed to fetch Spotify media." });
+    return res.status(502).json({
+      error: error.message || "Failed to fetch Spotify media.",
+    });
   }
 };
 

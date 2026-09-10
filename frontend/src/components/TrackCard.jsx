@@ -3,7 +3,7 @@ import { MdOutlineFileDownload } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useTracks } from "../context/TracksContext";
 
-const TrackCard = ({ track, playlistId }) => {
+const TrackCard = ({ track, playlistId, selected, onToggle }) => {
   const navigate = useNavigate();
   const { setTracks } = useTracks();
   const duration = `${Math.floor(track.duration_ms / 60000)}:${String(
@@ -18,6 +18,13 @@ const TrackCard = ({ track, playlistId }) => {
   return (
     <article className="rounded-lg bg-dark p-3 shadow-md">
       <div className="flex items-center gap-3">
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={() => onToggle(track.id)}
+          aria-label={`Select ${track.name}`}
+          className="h-4 w-4 shrink-0 accent-primary"
+        />
         <img
           src={track.album.image}
           alt={`${track.album.name} cover`}

@@ -3,7 +3,7 @@ import { MdOutlineFileDownload } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useTracks } from "../context/TracksContext";
 
-const TrackRow = ({ index, track, playlistId }) => {
+const TrackRow = ({ track, playlistId, selected, onToggle }) => {
   const navigate = useNavigate();
   const { setTracks } = useTracks();
 
@@ -19,8 +19,16 @@ const TrackRow = ({ index, track, playlistId }) => {
   };
 
   return (
-    <tr className="border-b border-[#212121] hover:bg-[#2a2a2a] transition duration-150">
-      <td className="px-4 py-3">{index + 1}</td>
+    <tr className="border-b border-darkMedium hover:bg-[#2a2a2a] transition duration-150">
+      <td className="px-4 py-3">
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={() => onToggle(track.id)}
+          aria-label={`Select ${track.name}`}
+          className="h-4 w-4 accent-primary"
+        />
+      </td>
       <td className="px-4 py-3 whitespace-nowrap overflow-x-scroll [scrollbar-width:none] [-ms-overflow-style:none]">
         <div className="flex items-center gap-3">
           <img

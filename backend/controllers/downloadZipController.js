@@ -10,6 +10,7 @@ import { dirname } from "path";
 
 const execPromise = promisify(exec);
 const ffmpegLocation = path.dirname(ffmpegPath.path);
+const MAX_DOWNLOAD_TRACKS = 6;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -19,11 +20,17 @@ if (!fs.existsSync(tempDir)) {
   fs.mkdirSync(tempDir, { recursive: true });
 }
 
-export const downloadZip = async (req, res) => {
-  const { tracks } = req.body;
+export const downloadZip = (io) => async (req, res) => {
+  const { tracks, socketId } = req.body;
 
   if (!tracks || !tracks.length) {
     return res.status(400).json({ error: "No tracks provided" });
+  }
+
+  if (tracks.length > MAX_DOWNLOAD_TRACKS) {
+    return res.status(400).json({
+      error: `You can download up to ${MAX_DOWNLOAD_TRACKS} tracks at a time.`,
+    });
   }
 
   try {
@@ -46,6 +53,17 @@ export const downloadZip = async (req, res) => {
     for (let i = 0; i < tracks.length; i++) {
       const track = tracks[i];
 
+      const emitProgress = (status) => {
+        if (socketId) {
+          io.to(socketId).emit("zip-progress", {
+            completed: i + 1,
+            total: tracks.length,
+            status,
+            track: track.name,
+          });
+        }
+      };
+
       try {
         const { name: title, artists } = track;
         const artist = Array.isArray(artists)
@@ -60,6 +78,7 @@ export const downloadZip = async (req, res) => {
 
         if (!videos || videos.length === 0) {
           failedDownloads.push(`${title} - No video found`);
+          emitProgress("failed");
           continue;
         }
 
@@ -100,6 +119,7 @@ export const downloadZip = async (req, res) => {
             archive.append(fileBuffer, { name: fileName });
             successfulDownloads++;
             fs.unlinkSync(finalPath);
+            emitProgress("completed");
           } else {
             throw new Error("File too small");
           }
@@ -108,6 +128,7 @@ export const downloadZip = async (req, res) => {
         }
       } catch (err) {
         failedDownloads.push(`${track.name} - ${err.message}`);
+        emitProgress("failed");
 
         const files = fs
           .readdirSync(tempDir)

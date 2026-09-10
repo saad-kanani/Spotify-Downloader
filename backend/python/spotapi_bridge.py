@@ -194,47 +194,56 @@ def fetch_playlist(playlist_id: str) -> Dict[str, Any]:
     tracks: List[Dict[str, Any]] = []
 
     # Use paginate_playlist to get all tracks across pages
-    try:
-        for batch in playlist.paginate_playlist():
-            items = batch.get("items", []) if isinstance(batch, dict) else []
-            for item in items:
-                track_wrapper = item.get("itemV2", {})
-                track_data = track_wrapper.get("data", {})
-                if not track_data or track_data.get("__typename") != "Track":
-                    continue
+    for batch in playlist.paginate_playlist():
+        if not isinstance(batch, dict):
+            continue
 
-                t_name = track_data.get("name", "Unknown Track")
-                t_uri = track_data.get("uri", "")
-                t_id = t_uri.split(":")[-1] if t_uri else ""
+        content = batch.get("content", batch)
+        items = content.get("items", []) if isinstance(content, dict) else []
+        for item in items:
+            track_wrapper = item.get("itemV2", {})
+            track_data = track_wrapper.get("data", {})
+            if not track_data or track_data.get("__typename") != "Track":
+                continue
 
-                # Playlist tracks use "trackDuration" not "duration"
-                t_duration = track_data.get("trackDuration", {}).get(
-                    "totalMilliseconds", 0
-                )
+            t_name = track_data.get("name", "Unknown Track")
+            t_uri = track_data.get("uri", "")
+            t_id = t_uri.split(":")[-1] if t_uri else ""
 
-                t_artists: List[Dict[str, str]] = []
-                for a in track_data.get("artists", {}).get("items", []):
-                    name = a.get("profile", {}).get("name")
-                    if name:
-                        t_artists.append({"name": name})
-                if not t_artists:
-                    t_artists = [{"name": "Unknown Artist"}]
+            # Playlist tracks use "trackDuration" not "duration"
+            t_duration = track_data.get("trackDuration", {}).get(
+                "totalMilliseconds", 0
+            )
 
-                album_data = track_data.get("albumOfTrack", {})
-                a_name = album_data.get("name", "")
-                a_sources = album_data.get("coverArt", {}).get("sources", [])
-                a_image = a_sources[0].get("url") if a_sources else cover_image
+            t_artists: List[Dict[str, str]] = []
+            for a in track_data.get("artists", {}).get("items", []):
+                name = a.get("profile", {}).get("name")
+                if name:
+                    t_artists.append({"name": name})
+            if not t_artists:
+                t_artists = [{"name": "Unknown Artist"}]
 
-                tracks.append({
-                    "id": t_id,
-                    "name": t_name,
-                    "artists": t_artists,
-                    "album": {"name": a_name, "image": a_image},
-                    "duration_ms": t_duration,
-                    "uri": t_uri,
-                })
-    except Exception as err:
-        sys.stderr.write(f"Playlist pagination warning: {err}\n")
+            album_data = track_data.get("albumOfTrack", {})
+            a_name = album_data.get("name", "")
+            a_sources = album_data.get("coverArt", {}).get("sources", [])
+            a_image = a_sources[0].get("url") if a_sources else cover_image
+
+            if not t_id:
+                continue
+
+            tracks.append({
+                "id": t_id,
+                "name": t_name,
+                "artists": t_artists,
+                "album": {"name": a_name, "image": a_image},
+                "duration_ms": t_duration,
+                "uri": t_uri,
+            })
+
+    if not tracks:
+        raise ValueError(
+            f"Playlist '{playlist_id}' was found, but no playable tracks were returned."
+        )
 
     return {
         "id": playlist_id,
@@ -279,7 +288,8 @@ def main():
         else:
             raise ValueError(f"Unsupported media type: '{media_type}'")
 
-        print(json.dumps(result, ensure_ascii=False))
+        # Escape non-ASCII characters so Windows code pages cannot break stdout.
+        print(json.dumps(result, ensure_ascii=True))
     except Exception as e:
         sys.stderr.write(f"Error fetching {media_type}: {e}\n")
         sys.exit(2)
