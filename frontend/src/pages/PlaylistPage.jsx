@@ -6,7 +6,7 @@ import { usePlaylistContext } from "../context/PlaylistContext";
 import { ImSpinner8 } from "react-icons/im";
 
 const PlaylistPage = () => {
-  const { playlists, user, loading, mode } = usePlaylistContext();
+  const { playlists, loading } = usePlaylistContext();
 
   if (loading) {
     return (
@@ -29,14 +29,7 @@ const PlaylistPage = () => {
     <div>
       <StepTracker currentStep={1} />
       <div className="flex justify-between items-center mb-8">
-        <h2 className="font-bold text-2xl">
-          {mode === 'login' ? 'Your Playlists' : 'Playlist'}
-        </h2>
-        {mode === 'login' && user && (
-          <div className="text-sm text-gray-400">
-            Welcome, {user.display_name}!
-          </div>
-        )}
+        <h2 className="font-bold text-2xl">Media</h2>
       </div>
       <div className="mx-4 md:mx-0 grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
         {playlists.map((playlist, index) => (

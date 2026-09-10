@@ -97,13 +97,11 @@ npm run dev
 ## Configuration
 
 - **Environment Variables:**
-
   - `backend/.env`:
-    - `SPOTIFY_CLIENT_ID`
-    - `SPOTIFY_CLIENT_SECRET`
-    - `SPOTIFY_REDIRECT_URI`
     - `VITE_FRONTEND_URL`
     - `PORT`
+    - `PYTHON_BIN`
+    - `SPOTAPI_TIMEOUT_MS`
   - `frontend/.env`:
     - `VITE_BACKEND_URL`
 
@@ -115,17 +113,14 @@ npm run dev
 
 ## API Reference
 
-- `GET /api/playlist`  
-  Fetch playlist information from a Spotify URL.
+- `POST /api/playlist/url`
+  Fetch track, album, or playlist information from a Spotify URL using SpotAPI.
 
 - `GET /api/stream`  
   Stream and download individual tracks (uses Socket.io for progress).
 
 - `POST /api/download-zip`  
   Download selected tracks as a ZIP file.
-
-- `POST /api/auth`  
-  Spotify authentication (login, callback, etc.).
 
 ---
 

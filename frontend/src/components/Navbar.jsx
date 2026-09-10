@@ -32,7 +32,9 @@ const Navbar = () => {
       {/* <button className="hidden bg-[#1db954] text-white py-3 px-4 rounded-full cursor-pointer md:block">
         Create an Account
       </button> */}
-      <p className="hidden text-sm text-gray-400 md:block">Download Your favorite Playlists</p>
+      <p className="hidden text-sm text-gray-400 md:block">
+        Download Your Favorite Tracks, Albums & Playlists
+      </p>
       <div className="md:hidden">
         <MdMenu
           size={40}
@@ -47,13 +49,26 @@ const Navbar = () => {
           } md:hidden right-0 bottom-0 top-0 z-50 overflow-hidden bg-darkMedium transition-all`}
         >
           <div className="flex items-center justify-between px-5 py-6">
-            <img src={assets.logo} onClick={() => {navigate('/'); setShowMenu(false);}} alt="logo" />
+            <img
+              src={assets.logo}
+              onClick={() => {
+                navigate("/");
+                setShowMenu(false);
+              }}
+              alt="logo"
+            />
             <IoMdClose size={35} onClick={() => setShowMenu(false)} />
-          </div> 
+          </div>
           <ul className="flex flex-col gap-2 items-center mt-5 px-5 text-lg font-medium">
-            <NavLink onClick={()=>setShowMenu(false)} to='/'><li className="px-4 py-2 rounded inline-block">Home</li></NavLink>
-            <NavLink onClick={()=>setShowMenu(false)} to='/how-it-works'><li className="px-4 py-2 rounded inline-block">How It Works</li></NavLink>
-            <NavLink onClick={()=>setShowMenu(false)} to='/faq'><li className="px-4 py-2 rounded inline-block">FAQ</li></NavLink>
+            <NavLink onClick={() => setShowMenu(false)} to="/">
+              <li className="px-4 py-2 rounded inline-block">Home</li>
+            </NavLink>
+            <NavLink onClick={() => setShowMenu(false)} to="/how-it-works">
+              <li className="px-4 py-2 rounded inline-block">How It Works</li>
+            </NavLink>
+            <NavLink onClick={() => setShowMenu(false)} to="/faq">
+              <li className="px-4 py-2 rounded inline-block">FAQ</li>
+            </NavLink>
           </ul>
         </div>
       </div>

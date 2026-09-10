@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { usePlaylistContext } from "../context/PlaylistContext";
 import { IoSearch } from "react-icons/io5";
 import TrackRow from "../components/TrackRow";
+import TrackCard from "../components/TrackCard";
 import { MdOutlineFileDownload } from "react-icons/md";
 import { ImSpinner8 } from "react-icons/im";
 
@@ -20,6 +21,7 @@ const TracksPage = () => {
 
   const playlist = playlists.find((pl) => pl.id === id);
   const tracks = playlist?.tracks || [];
+  const mediaLabel = playlist?.type || "playlist";
 
   const filteredTracks = useMemo(() => {
     const keyword = searchKeyword.trim().toLowerCase();
@@ -29,7 +31,7 @@ const TracksPage = () => {
         track.album.name
       }`
         .toLowerCase()
-        .includes(keyword)
+        .includes(keyword),
     );
   }, [tracks, searchKeyword]);
 
@@ -61,7 +63,7 @@ const TracksPage = () => {
         {
           responseType: "blob",
           timeout: 300000, // 5 minutes
-        }
+        },
       );
 
       // Check if response is JSON error instead of blob
@@ -99,14 +101,14 @@ const TracksPage = () => {
           alert(
             `Download failed: ${errorData.error}\n\nDetails: ${
               errorData.details?.join("\n") || "Unknown error"
-            }`
+            }`,
           );
         } catch {
           alert("Download failed: Server error");
         }
       } else if (error.response?.status === 400) {
         alert(
-          "Download failed: Could not find or download the requested tracks. Please try different songs."
+          "Download failed: Could not find or download the requested tracks. Please try different songs.",
         );
       } else {
         alert(`Download failed: ${error.message}`);
@@ -121,7 +123,10 @@ const TracksPage = () => {
       <StepTracker currentStep={2} />
       <div className="flex flex-col gap-4">
         <div className="flex justify-between">
-          <h2 className="font-bold text-2xl">{playlist.name}</h2>
+          <div>
+            <p className="text-sm text-gray-400 capitalize">{mediaLabel}</p>
+            <h2 className="font-bold text-2xl">{playlist.name}</h2>
+          </div>
           <p className="text-gray-400 text-sm">
             {tracks.length > 1
               ? `${tracks.length} Tracks`
@@ -144,10 +149,10 @@ const TracksPage = () => {
           />
         </div>
 
-        {/* Track Table */}
-        <div className="overflow-x-auto rounded-md shadow">
+        {/* Desktop track table */}
+        <div className="hidden overflow-x-auto rounded-md shadow md:block">
           <table className="table-auto bg-dark min-w-full text-sm text-left text-gray-300">
-            <thead className="text-gray-400 uppercase text-xs rounded border-b border-[#535353]">
+            <thead className="text-gray-400 uppercase text-xs rounded border-b border-darkLight">
               <tr>
                 <th className="px-4 py-3 font-medium">#</th>
                 <th className="px-4 py-3 font-medium">Title</th>
@@ -177,6 +182,23 @@ const TracksPage = () => {
           </table>
         </div>
 
+        {/* Mobile track cards */}
+        <div className="flex flex-col gap-3 md:hidden">
+          {filteredTracks.length > 0 ? (
+            filteredTracks.map((track, index) => (
+              <TrackCard
+                key={track.id || index}
+                track={track}
+                playlistId={id}
+              />
+            ))
+          ) : (
+            <p className="py-4 text-center text-gray-500">
+              No matching tracks found.
+            </p>
+          )}
+        </div>
+
         {/* Download All Button */}
         <div className="flex justify-center">
           <button
@@ -189,7 +211,13 @@ const TracksPage = () => {
             ) : (
               <MdOutlineFileDownload size={20} />
             )}
-            <span>{loading ? "Downloading..." : "Download All Tracks"}</span>
+            <span>
+              {loading
+                ? "Downloading..."
+                : tracks.length === 1
+                  ? "Download Track"
+                  : "Download All Tracks"}
+            </span>
           </button>
         </div>
       </div>

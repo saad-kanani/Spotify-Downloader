@@ -1,6 +1,6 @@
 // App.jsx
 import { RouterProvider } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
+import { Toaster } from "sonner";
 import { router } from "./router";
 import { PlaylistProvider } from "./context/PlaylistContext";
 import { TracksProvider } from "./context/TracksContext";
@@ -10,7 +10,7 @@ const App = () => {
     <PlaylistProvider>
       <TracksProvider>
         <div className="min-h-screen bg-darkMedium text-white px-[10px] py-[20px] md:px-[20px] md:py-[30px] lg:px-[140px]">
-          <ToastContainer theme="dark" />
+          <Toaster theme="dark" />
           <RouterProvider router={router} />
         </div>
       </TracksProvider>

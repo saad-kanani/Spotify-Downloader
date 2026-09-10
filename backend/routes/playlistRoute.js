@@ -1,10 +1,8 @@
 import express from "express";
-import fetchPlaylistFromUrl from "../controllers/urlController.js";
-import { fetchPlaylistsFromUser } from "../controllers/userPlaylistController.js";
+import fetchMediaFromUrl from "../controllers/mediaController.js";
 
 const playlistRoute = express.Router();
 
-playlistRoute.post("/url", fetchPlaylistFromUrl);
-playlistRoute.get("/user", fetchPlaylistsFromUser);
+playlistRoute.post("/url", fetchMediaFromUrl);
 
 export default playlistRoute;

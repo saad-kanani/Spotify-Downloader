@@ -4,7 +4,7 @@ import { io } from "socket.io-client";
 import DownloadCard from "../components/DownloadCard";
 import StepTracker from "../components/StepTracker";
 import { useTracks } from "../context/TracksContext";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 const socket = io(import.meta.env.VITE_BACKEND_URL || "http://localhost:4000", {
   transports: ["websocket"],
