@@ -386,7 +386,7 @@ const TracksPage = () => {
                     checked={allFilteredSelected}
                     onChange={toggleAllFiltered}
                     aria-label="Select all visible tracks"
-                    className="h-4 w-4 accent-primary"
+                    className="h-4 w-4 appearance-none rounded border-2 border-darkLight bg-darkMedium checked:border-primary checked:bg-primary"
                   />
                 </th>
                 <th className="px-4 py-3 font-medium">Title</th>

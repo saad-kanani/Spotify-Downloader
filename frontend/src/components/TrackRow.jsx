@@ -26,7 +26,7 @@ const TrackRow = ({ track, playlistId, selected, onToggle }) => {
           checked={selected}
           onChange={() => onToggle(track.id)}
           aria-label={`Select ${track.name}`}
-          className="h-4 w-4 accent-primary"
+          className="h-4 w-4 appearance-none rounded border-2 border-darkLight bg-darkMedium checked:border-primary checked:bg-primary"
         />
       </td>
       <td className="px-4 py-3 whitespace-nowrap overflow-x-scroll [scrollbar-width:none] [-ms-overflow-style:none]">
