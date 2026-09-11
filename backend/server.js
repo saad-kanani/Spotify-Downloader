@@ -2,13 +2,11 @@ import express from "express";
 import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
-import cookieParser from "cookie-parser";
 import "dotenv/config";
 
 import playlistRoute from "./routes/playlistRoute.js";
 import streamRoute from "./routes/streamRoute.js";
 import downloadZipRouter from "./routes/downloadZipRouter.js";
-import authRoute from "./routes/authRoute.js";
 
 const app = express();
 const port = process.env.PORT || 4000;
@@ -48,8 +46,6 @@ app.use(
   }),
 );
 
-// These are also important
-app.use(cookieParser());
 app.use(express.json());
 
 app.get("/", (req, res) => {
@@ -59,8 +55,7 @@ app.get("/", (req, res) => {
 // ✅ Use routes
 app.use("/api/playlist", playlistRoute);
 app.use("/api/stream", streamRoute(io));
-app.use("/api/download-zip", downloadZipRouter);
-app.use("/api/auth", authRoute);
+app.use("/api/download-zip", downloadZipRouter(io));
 
 server.listen(port, () =>
   console.log("Server Started http://localhost:" + port),

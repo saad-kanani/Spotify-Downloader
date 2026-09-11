@@ -6,7 +6,6 @@ import FAQPage from "../pages/FAQPage";
 import PlaylistPage from "../pages/PlaylistPage";
 import TracksPage from "../pages/TracksPage";
 import DownloadPage from "../pages/DownloadPage";
-import Callback from "../pages/Callback";
 import NotFound from "../pages/NotFound";
 import ProtectedRoute from "../components/ProtectedRoute";
 
@@ -50,10 +49,6 @@ export const router = createBrowserRouter([
             <DownloadPage />
           </ProtectedRoute>
         ),
-      },
-      {
-        path: "/callback",
-        element: <Callback />,
       },
       {
         path: "*",

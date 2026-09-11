@@ -22,17 +22,20 @@
 
 ## Description
 
-Spotify-Downloader is a web application that enables users to download tracks from Spotify playlists as MP3 files. You can log in with your Spotify account to access your playlists, or paste a public playlist URL. The app fetches playlist tracks and provides easy download options, including real-time progress updates.
+SpotiLoad is a full-stack application for fetching public Spotify metadata and downloading matching tracks as MP3 files. Users can paste a public track, album, or playlist URL, review the available tracks, select individual tracks, or download up to six selected tracks as a ZIP archive.
 
-**Key Features:**
+### Key Features
 
-- Login with Spotify or paste playlist URL
-- Browse and select tracks
-- Download tracks as MP3 or ZIP
-- Real-time download progress
-
-**Purpose:**  
-Makes it easy to download Spotify playlist tracks for offline use, solving the hassle of accessing favorite music without an internet connection.
+- Public Spotify track, album, and playlist support
+- No Spotify Premium account or Spotify Developer credentials required
+- Responsive desktop and mobile interface
+- Mobile-friendly track cards
+- Individual MP3 downloads
+- Checkbox-based track selection and select-all support
+- Maximum of six tracks per bulk ZIP download
+- ZIP progress, current-track status, and estimated remaining time
+- Unicode-safe metadata and filenames
+- YouTube search with `yt-dlp` and FFmpeg conversion
 
 ---
 
@@ -40,9 +43,12 @@ Makes it easy to download Spotify playlist tracks for offline use, solving the h
 
 - [Installation](#installation)
 - [Usage](#usage)
+- [Technology Stack](#technology-stack)
 - [Configuration](#configuration)
 - [API Reference](#api-reference)
 - [Screenshots](#screenshots)
+- [Production Deployment](#production-deployment)
+- [Legal Notice](#legal-notice)
 - [License](#license)
 
 ---
@@ -51,8 +57,11 @@ Makes it easy to download Spotify playlist tracks for offline use, solving the h
 
 ### Prerequisites
 
-- Node.js (v18+)
+- Node.js 18 or newer
 - npm
+- Python 3.10 or newer
+- FFmpeg
+- Internet access
 
 ### Step-by-step Instructions
 
@@ -60,12 +69,14 @@ Makes it easy to download Spotify playlist tracks for offline use, solving the h
 git clone https://github.com/yourusername/Spotify-Downloader.git
 cd Spotify-Downloader
 
-# Backend setup
 cd backend
 npm install
+py -m pip install -r python/requirements.txt
+
+# Create backend/.env from backend/.env.example
 npm run server
 
-# Frontend setup
+# In a second terminal:
 cd ../frontend
 npm install
 npm run dev
@@ -75,35 +86,59 @@ npm run dev
 
 ## Usage
 
-1. **Login with Spotify:**  
-   Authenticate to access your playlists.
-
-2. **Paste Playlist URL:**  
-   Enter a public Spotify playlist URL.
-
-3. **Download:**  
-   Select tracks and download as MP3 or ZIP.
+1. Copy a public Spotify track, album, or playlist URL.
+2. Select the matching tab on the home page.
+3. Paste the URL and fetch the media metadata.
+4. Select the tracks you want to download.
+5. Download a track individually or download up to six selected tracks as a ZIP.
 
 ## Screenshots
 
-![Login Mode](frontend/public/img1.png)
-![URL Mode](frontend/public/img2.png)
-![Playlist Page](frontend/public/img3.png)
-![Tracks Page](frontend/public/img4.png)
-![Download Page](frontend/public/img5.png)
+![Home Page](frontend/public/img1.png)
+![Track Page](frontend/public/img2.png)
+![Download Multiple Tracks](frontend/public/img3.png)
+![Download Page](frontend/public/img4.png)
+
+---
+
+## Technology Stack
+
+### Frontend
+
+- React
+- Vite
+- React Router
+- Tailwind CSS
+- Axios
+- Socket.IO Client
+- React Icons
+- Sonner
+
+### Backend
+
+- Node.js
+- Express
+- Socket.IO
+- YouTube SR
+- `yt-dlp`
+- FFmpeg
+- Archiver
+
+### Metadata Bridge
+
+- Python
+- SpotAPI
 
 ---
 
 ## Configuration
 
 - **Environment Variables:**
-
   - `backend/.env`:
-    - `SPOTIFY_CLIENT_ID`
-    - `SPOTIFY_CLIENT_SECRET`
-    - `SPOTIFY_REDIRECT_URI`
     - `VITE_FRONTEND_URL`
     - `PORT`
+    - `PYTHON_BIN`
+    - `SPOTAPI_TIMEOUT_MS`
   - `frontend/.env`:
     - `VITE_BACKEND_URL`
 
@@ -111,21 +146,99 @@ npm run dev
   - `backend/.env`
   - `frontend/.env`
 
+Example backend configuration:
+
+```env
+VITE_FRONTEND_URL=http://localhost:5173
+PORT=8000
+PYTHON_BIN=py
+SPOTAPI_TIMEOUT_MS=120000
+```
+
+On Linux or macOS, use `PYTHON_BIN=python3`.
+
+Example frontend configuration:
+
+```env
+VITE_BACKEND_URL=http://localhost:8000
+```
+
+Do not commit `.env` files or private credentials to source control.
+
 ---
 
 ## API Reference
 
-- `GET /api/playlist`  
-  Fetch playlist information from a Spotify URL.
+### Fetch Spotify Media
 
-- `GET /api/stream`  
-  Stream and download individual tracks (uses Socket.io for progress).
+```http
+POST /api/playlist/url
+```
 
-- `POST /api/download-zip`  
-  Download selected tracks as a ZIP file.
+Request body:
 
-- `POST /api/auth`  
-  Spotify authentication (login, callback, etc.).
+```json
+{
+  "url": "https://open.spotify.com/track/TRACK_ID"
+}
+```
+
+Returns normalized metadata for a track, album, or public playlist.
+
+### Download an Individual Track
+
+```http
+GET /api/stream?title=Track%20Name&artist=Artist&socketId=SOCKET_ID&index=0
+```
+
+The endpoint searches for a matching audio result, converts it to MP3, and streams it to the client.
+
+### Download Selected Tracks as ZIP
+
+```http
+POST /api/download-zip
+```
+
+Request body:
+
+```json
+{
+  "tracks": [],
+  "socketId": "SOCKET_ID"
+}
+```
+
+The endpoint accepts a maximum of six tracks per request and emits progress events through Socket.IO.
+
+---
+
+## Production Deployment
+
+A simple deployment can use Docker Compose on a VPS with HTTPS provided by Nginx, Caddy, or Cloudflare.
+
+Recommended layout:
+
+```text
+yourdomain.com       -> frontend
+api.yourdomain.com   -> backend
+```
+
+For higher traffic, move ZIP processing to a background queue such as Redis and BullMQ. Store generated archives in object storage when running multiple backend instances.
+
+Recommended production improvements:
+
+- Add rate limiting and request validation
+- Limit concurrent `yt-dlp` processes
+- Add automatic temporary-file cleanup
+- Add health checks and monitoring
+- Use `spawn()` argument arrays instead of shell command strings
+- Run frontend, backend, and workers in separate containers
+
+## Legal Notice
+
+SpotiLoad does not download audio directly from Spotify. It retrieves public metadata from Spotify and searches for matching publicly available audio sources.
+
+Users are responsible for complying with copyright laws, Spotify terms of service, YouTube terms of service, and applicable local regulations. Use this project only with content you are legally authorized to download and use.
 
 ---
 

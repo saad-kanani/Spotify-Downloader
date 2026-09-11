@@ -1,65 +1,125 @@
 import React from "react";
+import { FiCheck, FiDownload, FiLink, FiMousePointer } from "react-icons/fi";
 import assets from "../assets/assets";
 
+const steps = [
+  {
+    number: "01",
+    icon: FiLink,
+    image: assets.i1,
+    title: "Copy a Spotify link",
+    description:
+      "Copy the public link for a track, album, or playlist from Spotify.",
+  },
+  {
+    number: "02",
+    icon: FiMousePointer,
+    image: assets.i2,
+    title: "Choose and paste",
+    description:
+      "Pick the matching tab on the home page, paste your link, and fetch its tracks.",
+  },
+  {
+    number: "03",
+    icon: FiDownload,
+    image: assets.i3,
+    title: "Select your queue",
+    description:
+      "Choose individual tracks or select up to six tracks for one ZIP download.",
+  },
+];
+
 const HowItWorks = () => {
-  const steps = [
-    {
-      number: "1",
-      title: "Find Spotify Playlist",
-      description:
-        "Open the Spotify app and play the playlist you want to download using SpotiLoad Downloader.",
-    },
-    {
-      number: "2",
-      title: "Copy Playlist Link",
-      description:
-        "Copy the Spotify playlist URL by clicking the three dots next to the playlist and selecting 'Share' then click 'Copy Link'.",
-    },
-    {
-      number: "3",
-      title: "Download Music",
-      description:
-        "Paste the Spotify playlist URL in the box above and hit the 'Download' button to download and save the Spotify music.",
-    },
-  ];
-
-  const { i1, i2, i3 } = assets;
-  const images = [{ image: i3, title: "Long press the playlist." }, { image: i1, title: "Click the Share button."  }, { image: i2, title: "Copy the Link by Clicking the Copy Link Button"  }];
-
   return (
-    <div className="">
-      <h1 className="text-3xl font-bold mb-6 text-center">How It Works</h1>
-      <p className="text-center text-gray-500 mb-10">
-        Turn any Spotify playlist into downloadable MP3s in a few simple steps.
-      </p>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        {steps.map((step, index) => (
-          <div
-            key={index}
-            className="flex flex-col justify-center items-center gap-3"
+    <section className="mx-auto max-w-6xl px-2 py-8 sm:px-6 sm:py-14">
+      <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
+        <div>
+          <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-primary">
+            Simple by design
+          </p>
+          <h1 className="max-w-xl text-4xl font-bold leading-tight text-white sm:text-6xl">
+            From link to listening in three steps.
+          </h1>
+        </div>
+        <p className="max-w-lg text-base leading-7 text-grayMuted lg:justify-self-end">
+          SpotiLoad keeps the workflow focused: bring a public Spotify link,
+          choose what you want, and download a clean MP3 queue.
+        </p>
+      </div>
+
+      <div className="mt-12 grid gap-4 md:grid-cols-3">
+        {steps.map(({ number, icon: Icon, image, title, description }) => (
+          <article
+            key={number}
+            className="relative overflow-hidden rounded-lg border border-darkLight bg-dark"
           >
-            <div className="flex items-center gap-3">
-              <span className="text-2xl font-bold text-primary bg-green-200 rounded-full py-0.5 px-3">
-                {step.number}
-              </span>
-              <p className="font-bold text-2xl">{step.title}</p>
+            <img
+              src={image}
+              alt={`${title} demonstration`}
+              width="738"
+              height="1453"
+              className="block h-auto w-full"
+            />
+            <div className="p-5">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-bold tracking-widest text-primary">
+                  {number}
+                </span>
+                <span className="rounded-md bg-darkMedium p-2 text-primary">
+                  <Icon size={21} aria-hidden="true" />
+                </span>
+              </div>
+              <h2 className="mt-10 text-xl font-bold text-white">{title}</h2>
+              <p className="mt-3 text-sm leading-6 text-grayMuted">
+                {description}
+              </p>
             </div>
-            <p className="text-md text-center">{step.description}</p>
-          </div>
+          </article>
         ))}
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {images.map((img, index) => (
-          <div
-            key={index}
-            className="flex flex-col justify-center items-center gap-2"
-          >
-            <img className="rounded-xl h-150" src={img.image} alt="ScreenShoot" />
-            <p>{img.title}</p>
+
+      <div className="mt-10 grid gap-4 rounded-lg border border-darkLight bg-dark p-5 sm:p-7 lg:grid-cols-[1fr_0.8fr] lg:items-center">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary">
+            Your download checklist
+          </p>
+          <h2 className="mt-3 text-2xl font-bold text-white">
+            A little preparation makes the queue smoother.
+          </h2>
+          <ul className="mt-5 grid gap-3 text-sm text-grayMuted sm:grid-cols-2">
+            {[
+              "Use a public Spotify link",
+              "Keep the browser tab open",
+              "Select no more than six tracks",
+              "Check the current track status",
+            ].map((item) => (
+              <li key={item} className="flex items-center gap-2">
+                <FiCheck className="shrink-0 text-primary" aria-hidden="true" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="rounded-lg bg-darkMedium p-5">
+          <p className="text-sm font-semibold text-white">Supported links</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {[
+              ["Track", "A single song"],
+              ["Album", "A full release"],
+              ["Playlist", "A curated collection"],
+            ].map(([label, description]) => (
+              <div
+                key={label}
+                className="rounded-md border border-darkLight px-3 py-2"
+              >
+                <p className="text-sm font-medium text-white">{label}</p>
+                <p className="text-xs text-grayMuted">{description}</p>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
-    </div>
+    </section>
   );
 };
 
