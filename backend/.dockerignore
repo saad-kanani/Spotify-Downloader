@@ -1,0 +1,12 @@
+node_modules
+npm-debug.log
+.env
+.git
+.gitignore
+controllers/temp
+python/__pycache__
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+Thumbs.db

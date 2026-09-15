@@ -1,0 +1,13 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - PYTHON_BIN=python3
+      - SPOTAPI_TIMEOUT_MS=120000
+      - FRONTEND_URL=http://localhost:5173
+    restart: unless-stopped

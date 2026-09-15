@@ -6,7 +6,18 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 
-const ffmpegLocation = path.dirname(ffmpegPath.path);
+const getFfmpegLocation = () => {
+  if (process.env.FFMPEG_LOCATION) return process.env.FFMPEG_LOCATION;
+  try {
+    if (ffmpegPath && ffmpegPath.path && fs.existsSync(ffmpegPath.path)) {
+      return path.dirname(ffmpegPath.path);
+    }
+  } catch {
+    // ignore
+  }
+  return "";
+};
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -72,8 +83,12 @@ export const trackDownload = (io) => async (req, res) => {
     res.setHeader("Content-Type", "audio/mpeg");
 
     // Download with yt-dlp and stream progress
-    const pythonCommand = process.env.PYTHON_BIN || "python";
-    const downloadCommand = `"${pythonCommand}" -m yt_dlp -x --audio-format mp3 --audio-quality 0 --ffmpeg-location "${ffmpegLocation}" --no-warnings --newline --progress -o "${tempFilePath}.%(ext)s" "${videoUrl}"`;
+    const pythonCommand =
+      process.env.PYTHON_BIN ||
+      (process.platform === "win32" ? "python" : "python3");
+    const ffmpegLoc = getFfmpegLocation();
+    const ffmpegArg = ffmpegLoc ? `--ffmpeg-location "${ffmpegLoc}"` : "";
+    const downloadCommand = `"${pythonCommand}" -m yt_dlp -x --audio-format mp3 --audio-quality 0 ${ffmpegArg} --no-warnings --newline --progress -o "${tempFilePath}.%(ext)s" "${videoUrl}"`;
 
     console.log("🚀 Executing yt-dlp command...");
     const downloadProcess = exec(downloadCommand, { timeout: 120000 });

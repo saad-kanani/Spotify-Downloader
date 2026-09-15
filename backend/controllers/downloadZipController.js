@@ -9,7 +9,17 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 
 const execPromise = promisify(exec);
-const ffmpegLocation = path.dirname(ffmpegPath.path);
+const getFfmpegLocation = () => {
+  if (process.env.FFMPEG_LOCATION) return process.env.FFMPEG_LOCATION;
+  try {
+    if (ffmpegPath && ffmpegPath.path && fs.existsSync(ffmpegPath.path)) {
+      return path.dirname(ffmpegPath.path);
+    }
+  } catch {
+    // ignore
+  }
+  return "";
+};
 const MAX_DOWNLOAD_TRACKS = 6;
 
 const __filename = fileURLToPath(import.meta.url);
@@ -91,8 +101,12 @@ export const downloadZip = (io) => async (req, res) => {
         const tempFilePath = path.join(tempDir, tempFileName);
 
         const videoUrl = `https://www.youtube.com/watch?v=${video.id}`;
-        const pythonCommand = process.env.PYTHON_BIN || "python";
-        const downloadCommand = `"${pythonCommand}" -m yt_dlp -x --audio-format mp3 --audio-quality 0 --ffmpeg-location "${ffmpegLocation}" -o "${tempFilePath}.%(ext)s" "${videoUrl}"`;
+        const pythonCommand =
+          process.env.PYTHON_BIN ||
+          (process.platform === "win32" ? "python" : "python3");
+        const ffmpegLoc = getFfmpegLocation();
+        const ffmpegArg = ffmpegLoc ? `--ffmpeg-location "${ffmpegLoc}"` : "";
+        const downloadCommand = `"${pythonCommand}" -m yt_dlp -x --audio-format mp3 --audio-quality 0 ${ffmpegArg} -o "${tempFilePath}.%(ext)s" "${videoUrl}"`;
 
         await execPromise(downloadCommand, { timeout: 60000 });
 

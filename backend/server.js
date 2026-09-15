@@ -12,37 +12,58 @@ const app = express();
 const port = process.env.PORT || 4000;
 const server = http.createServer(app);
 
+const normalizeUrl = (url) => (url ? url.trim().replace(/\/+$/, "") : "");
+
+const envOrigins = [
+  process.env.FRONTEND_URL,
+  process.env.VITE_FRONTEND_URL,
+]
+  .filter(Boolean)
+  .flatMap((url) => url.split(","))
+  .map(normalizeUrl)
+  .filter(Boolean);
+
+const allowedOrigins = [
+  "http://127.0.0.1:5173",
+  "http://localhost:5173",
+  "http://localhost:3000",
+  ...envOrigins,
+];
+
+const isOriginAllowed = (origin) => {
+  if (!origin) return true;
+  const normalized = normalizeUrl(origin);
+  return allowedOrigins.some((allowed) => normalizeUrl(allowed) === normalized);
+};
+
 const io = new Server(server, {
   cors: {
-    origin: process.env.VITE_FRONTEND_URL || "http://127.0.0.1:5173",
+    origin: (origin, callback) => {
+      if (isOriginAllowed(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("CORS policy does not allow access from this Origin"));
+      }
+    },
     credentials: true,
   },
 });
 
-const allowedOrigins = [
-  "http://127.0.0.1:5173", // <- frontend loopback IP
-  "http://127.0.0.1:5173", // same port, just in case
-  "http://localhost:5173",
-  process.env.VITE_FRONTEND_URL,
-].filter(Boolean);
-
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-
-      if (allowedOrigins.indexOf(origin) === -1) {
-        const msg =
-          "The CORS policy for this site does not allow access from the specified Origin.";
-        return callback(new Error(msg), false);
+      if (isOriginAllowed(origin)) {
+        return callback(null, true);
       }
-      return callback(null, true);
+      const msg =
+        "The CORS policy for this site does not allow access from the specified Origin: " +
+        origin;
+      return callback(new Error(msg), false);
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-    exposedHeaders: ["Set-Cookie"], // Expose Set-Cookie header
+    exposedHeaders: ["Set-Cookie"],
   }),
 );
 
@@ -50,6 +71,10 @@ app.use(express.json());
 
 app.get("/", (req, res) => {
   res.send("API WORKING");
+});
+
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
 // ✅ Use routes

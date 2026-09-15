@@ -6,7 +6,9 @@ const bridgePath = fileURLToPath(
 );
 
 export function fetchMedia(mediaType, mediaId) {
-  const pythonCommand = process.env.PYTHON_BIN || "python";
+  const pythonCommand =
+    process.env.PYTHON_BIN ||
+    (process.platform === "win32" ? "python" : "python3");
   const timeoutMs = Number(process.env.SPOTAPI_TIMEOUT_MS || 120000);
 
   return new Promise((resolve, reject) => {
