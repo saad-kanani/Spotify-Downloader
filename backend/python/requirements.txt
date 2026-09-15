@@ -1,3 +1,5 @@
 spotapi>=1.2.8
 yt-dlp>=2025.1.15
 pymongo
+redis
+websockets
