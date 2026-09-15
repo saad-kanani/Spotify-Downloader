@@ -26,6 +26,7 @@ const envOrigins = [
 const allowedOrigins = [
   "http://127.0.0.1:5173",
   "http://localhost:5173",
+  "http://127.0.0.1:3000",
   "http://localhost:3000",
   ...envOrigins,
 ];
@@ -33,6 +34,10 @@ const allowedOrigins = [
 const isOriginAllowed = (origin) => {
   if (!origin) return true;
   const normalized = normalizeUrl(origin);
+  // Automatically allow any localhost or 127.0.0.1 port (e.g. 3000, 5173, etc.)
+  if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(normalized)) {
+    return true;
+  }
   return allowedOrigins.some((allowed) => normalizeUrl(allowed) === normalized);
 };
 
