@@ -6,7 +6,18 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 
-const ffmpegLocation = path.dirname(ffmpegPath.path);
+const getFfmpegLocation = () => {
+  if (process.env.FFMPEG_LOCATION) return process.env.FFMPEG_LOCATION;
+  try {
+    if (ffmpegPath && ffmpegPath.path && fs.existsSync(ffmpegPath.path)) {
+      return path.dirname(ffmpegPath.path);
+    }
+  } catch {
+    // ignore
+  }
+  return "";
+};
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
@@ -33,7 +44,6 @@ const buildDownloadFilename = (title, artist) => {
 export const trackDownload = (io) => async (req, res) => {
   const { title, artist, socketId, index } = req.query;
 
-  console.log("📥 Download request:", { title, artist, socketId, index });
 
   if (!title || !artist || !socketId || index === undefined) {
     console.error("❌ Missing parameters");
@@ -41,7 +51,6 @@ export const trackDownload = (io) => async (req, res) => {
   }
 
   try {
-    console.log(`🔍 Searching for: ${title} - ${artist}`);
     const searchQuery = `${title} ${artist} official audio`;
     const videos = await YouTube.search(searchQuery, {
       limit: 1,
@@ -58,24 +67,24 @@ export const trackDownload = (io) => async (req, res) => {
     }
 
     const video = videos[0];
-    console.log(`✅ Found video: ${video.title} (${video.id})`);
 
     const fileName = buildDownloadFilename(title, artist);
     const tempFileName = `temp-${Date.now()}-${socketId}-${index}`;
     const tempFilePath = path.join(tempDir, tempFileName);
     const videoUrl = `https://www.youtube.com/watch?v=${video.id}`;
 
-    console.log(`⬇️ Starting download to: ${tempFilePath}`);
-
     // Set response headers
     res.setHeader("Content-Disposition", fileName.header);
     res.setHeader("Content-Type", "audio/mpeg");
 
     // Download with yt-dlp and stream progress
-    const pythonCommand = process.env.PYTHON_BIN || "python";
-    const downloadCommand = `"${pythonCommand}" -m yt_dlp -x --audio-format mp3 --audio-quality 0 --ffmpeg-location "${ffmpegLocation}" --no-warnings --newline --progress -o "${tempFilePath}.%(ext)s" "${videoUrl}"`;
+    const pythonCommand =
+      process.env.PYTHON_BIN ||
+      (process.platform === "win32" ? "python" : "python3");
+    const ffmpegLoc = getFfmpegLocation();
+    const ffmpegArg = ffmpegLoc ? `--ffmpeg-location "${ffmpegLoc}"` : "";
+    const downloadCommand = `"${pythonCommand}" -m yt_dlp -x --audio-format mp3 --audio-quality 0 ${ffmpegArg} --no-warnings --newline --progress -o "${tempFilePath}.%(ext)s" "${videoUrl}"`;
 
-    console.log("🚀 Executing yt-dlp command...");
     const downloadProcess = exec(downloadCommand, { timeout: 120000 });
 
     // Track progress from yt-dlp output
@@ -84,7 +93,6 @@ export const trackDownload = (io) => async (req, res) => {
 
     downloadProcess.stdout.on("data", (data) => {
       const output = data.toString();
-      console.log("📤 stdout:", output);
       const progressMatch = output.match(/(\d+\.?\d*)%/);
 
       if (progressMatch) {
@@ -101,7 +109,6 @@ export const trackDownload = (io) => async (req, res) => {
 
     downloadProcess.stderr.on("data", (data) => {
       const output = data.toString();
-      console.log("📥 stderr:", output);
       errorOutput += output;
 
       const progressMatch = output.match(/(\d+\.?\d*)%/);
@@ -140,14 +147,12 @@ export const trackDownload = (io) => async (req, res) => {
     });
 
     downloadProcess.on("exit", (code) => {
-      console.log(`📊 Download process exited with code: ${code}`);
 
       if (errorOutput) {
         console.error("❌ yt-dlp error output:", errorOutput);
       }
 
       if (code === 0) {
-        console.log("✅ Download successful, finding file...");
         // Find the downloaded file
         const files = fs
           .readdirSync(tempDir)
@@ -165,16 +170,10 @@ export const trackDownload = (io) => async (req, res) => {
         const downloadedFile = path.join(tempDir, files[0]);
         const finalPath = `${tempFilePath}.mp3`;
 
-        console.log(`📁 Found file: ${files[0]}`);
-
         // Rename to .mp3 if needed
         if (downloadedFile !== finalPath) {
           fs.renameSync(downloadedFile, finalPath);
-          console.log(`✅ Renamed to: ${finalPath}`);
         }
-
-        // Stream file to response
-        console.log("📤 Streaming file to client...");
         const fileStream = fs.createReadStream(finalPath);
 
         fileStream.on("error", (err) => {
@@ -186,17 +185,13 @@ export const trackDownload = (io) => async (req, res) => {
         });
 
         fileStream.on("end", () => {
-          console.log("✅ File streaming complete");
           io.to(socketId).emit("download-complete", {
             index: Number(index),
           });
-
-          // Clean up file after streaming
           setTimeout(() => {
             try {
               if (fs.existsSync(finalPath)) {
                 fs.unlinkSync(finalPath);
-                console.log("🗑️ Temp file cleaned up");
               }
             } catch (err) {
               console.error("Cleanup error:", err);

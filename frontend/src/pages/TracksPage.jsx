@@ -7,11 +7,13 @@ import { IoSearch } from "react-icons/io5";
 import TrackRow from "../components/TrackRow";
 import TrackCard from "../components/TrackCard";
 import { MdOutlineFileDownload } from "react-icons/md";
+import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 import { ImSpinner8 } from "react-icons/im";
 import { io } from "socket.io-client";
 import { toast } from "sonner";
 
 const MAX_DOWNLOAD_TRACKS = 6;
+const TRACKS_PER_PAGE = 10;
 
 const zipSocket = io(
   import.meta.env.VITE_BACKEND_URL || "http://localhost:4000",
@@ -22,6 +24,7 @@ const TracksPage = () => {
   const [searchKeyword, setSearchKeyword] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedTrackIds, setSelectedTrackIds] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
   const [zipProgress, setZipProgress] = useState(null);
 
   const navigate = useNavigate();
@@ -31,7 +34,7 @@ const TracksPage = () => {
   const { playlists } = usePlaylistContext();
 
   const playlist = playlists.find((pl) => pl.id === id);
-  const tracks = playlist?.tracks || [];
+  const tracks = useMemo(() => playlist?.tracks || [], [playlist]);
   const mediaLabel = playlist?.type || "playlist";
 
   const filteredTracks = useMemo(() => {
@@ -46,6 +49,15 @@ const TracksPage = () => {
     );
   }, [tracks, searchKeyword]);
 
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredTracks.length / TRACKS_PER_PAGE),
+  );
+  const visibleTracks = useMemo(() => {
+    const start = (currentPage - 1) * TRACKS_PER_PAGE;
+    return filteredTracks.slice(start, start + TRACKS_PER_PAGE);
+  }, [currentPage, filteredTracks]);
+
   useEffect(() => {
     if (!playlists.length || !id || !playlist) {
       navigate("/");
@@ -54,12 +66,16 @@ const TracksPage = () => {
 
   useEffect(() => {
     setSelectedTrackIds([]);
+    setCurrentPage(1);
   }, [id]);
 
-  // Return fallback UI if playlist isn't loaded yet
-  if (!playlist) {
-    return null;
-  }
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchKeyword]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   const downloadZip = async () => {
     const selectedTracks = tracks.filter((track) =>
@@ -120,8 +136,6 @@ const TracksPage = () => {
         });
       }, 1000);
 
-      console.log("Sending tracks to download:", selectedTracks);
-
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/api/download-zip`,
         { tracks: selectedTracks, socketId },
@@ -154,8 +168,6 @@ const TracksPage = () => {
       a.remove();
       window.URL.revokeObjectURL(url);
       downloadSucceeded = true;
-
-      console.log("Download completed successfully");
     } catch (error) {
       console.error("ZIP download failed:", error);
 
@@ -216,6 +228,10 @@ const TracksPage = () => {
     return () => zipSocket.off("zip-progress", handleZipProgress);
   }, []);
 
+  if (!playlist) {
+    return null;
+  }
+
   const toggleTrack = (trackId) => {
     setSelectedTrackIds((currentIds) => {
       if (currentIds.includes(trackId)) {
@@ -234,11 +250,11 @@ const TracksPage = () => {
   };
 
   const allFilteredSelected =
-    filteredTracks.length > 0 &&
-    filteredTracks.every((track) => selectedTrackIds.includes(track.id));
+    visibleTracks.length > 0 &&
+    visibleTracks.every((track) => selectedTrackIds.includes(track.id));
 
   const toggleAllFiltered = () => {
-    const filteredIds = filteredTracks.map((track) => track.id);
+    const filteredIds = visibleTracks.map((track) => track.id);
     setSelectedTrackIds((currentIds) => {
       if (allFilteredSelected) {
         return currentIds.filter((trackId) => !filteredIds.includes(trackId));
@@ -397,7 +413,7 @@ const TracksPage = () => {
             </thead>
             <tbody>
               {filteredTracks.length > 0 ? (
-                filteredTracks.map((track, index) => (
+                visibleTracks.map((track, index) => (
                   <TrackRow
                     key={track.id || index}
                     track={track}
@@ -420,7 +436,7 @@ const TracksPage = () => {
         {/* Mobile track cards */}
         <div className="flex flex-col gap-3 md:hidden">
           {filteredTracks.length > 0 ? (
-            filteredTracks.map((track, index) => (
+            visibleTracks.map((track, index) => (
               <TrackCard
                 key={track.id || index}
                 track={track}
@@ -435,6 +451,41 @@ const TracksPage = () => {
             </p>
           )}
         </div>
+
+        {filteredTracks.length > 0 && (
+          <div className="flex flex-col items-center justify-between gap-3 text-sm text-gray-400 sm:flex-row">
+            <p>
+              Showing {(currentPage - 1) * TRACKS_PER_PAGE + 1}-
+              {Math.min(currentPage * TRACKS_PER_PAGE, filteredTracks.length)}{" "}
+              of {filteredTracks.length} tracks
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                disabled={currentPage === 1}
+                aria-label="Previous page"
+                className="rounded-md border border-darkLight p-1.5 text-white transition hover:border-primary disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <MdChevronLeft size={22} />
+              </button>
+              <span className="min-w-20 text-center text-white">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() =>
+                  setCurrentPage((page) => Math.min(totalPages, page + 1))
+                }
+                disabled={currentPage === totalPages}
+                aria-label="Next page"
+                className="rounded-md border border-darkLight p-1.5 text-white transition hover:border-primary disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <MdChevronRight size={22} />
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="flex flex-col items-center gap-2">
           {downloadAllButton}

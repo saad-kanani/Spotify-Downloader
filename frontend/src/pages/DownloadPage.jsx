@@ -27,51 +27,74 @@ const DownloadPage = () => {
       navigate("/");
       return;
     }
-    
 
     setProgress(tracks.map(() => 0));
     setCompleted(tracks.map(() => false));
 
-    tracks.forEach((track, index) => {
-      const { name, artists } = track;
-
-      // Create the download URL with query params
-      const url = new URL(`${import.meta.env.VITE_BACKEND_URL || "http://localhost:4000"}/api/stream`);
-      url.searchParams.append("title", name);
-      url.searchParams.append("artist", artists.map(artist => artist.name).join(", "));
-      url.searchParams.append("socketId", socket.id);
-      url.searchParams.append("index", index);
-
-      // Create invisible <a> tag and trigger click
-      const a = document.createElement("a");
-      a.href = url.toString();
-      a.setAttribute("download", "");
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    });
-
-    socket.on("download-progress", ({ index, percent }) => {
+    const handleDownloadProgress = ({ index, percent }) => {
       setProgress((prev) => prev.map((p, i) => (i === index ? percent : p)));
-    });
+    };
 
-    socket.on("download-complete", ({ index }) => {
+    const handleDownloadComplete = ({ index }) => {
       setCompleted((prev) => prev.map((c, i) => (i === index ? true : c)));
-      navigate("/tracks", { state: { id } });
-    });
+    };
 
-    socket.on("download-error", ({ index, message }) => {
+    const handleDownloadError = ({ index, message }) => {
       console.error(`Track ${index} Error: ${message}`);
       toast.error(`Track ${index} Error: ${message}`);
       navigate("/tracks", { state: { id } });
-    });
+    };
+
+    socket.on("download-progress", handleDownloadProgress);
+    socket.on("download-complete", handleDownloadComplete);
+    socket.on("download-error", handleDownloadError);
+
+    const startDownloads = () => {
+      const socketId = socket.id;
+      if (!socketId) return;
+
+      tracks.forEach((track, index) => {
+        const { name, artists } = track;
+        const url = new URL(
+          `${import.meta.env.VITE_BACKEND_URL || "http://localhost:4000"}/api/stream`,
+        );
+        url.searchParams.append("title", name);
+        url.searchParams.append(
+          "artist",
+          artists.map((artist) => artist.name).join(", "),
+        );
+        url.searchParams.append("socketId", socketId);
+        url.searchParams.append("index", index);
+
+        const anchor = document.createElement("a");
+        anchor.href = url.toString();
+        anchor.setAttribute("download", "");
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+      });
+    };
+
+    if (socket.connected) {
+      startDownloads();
+    } else {
+      socket.once("connect", startDownloads);
+      socket.connect();
+    }
 
     return () => {
-      socket.off("download-progress");
-      socket.off("download-complete");
-      socket.off("download-error");
+      socket.off("connect", startDownloads);
+      socket.off("download-progress", handleDownloadProgress);
+      socket.off("download-complete", handleDownloadComplete);
+      socket.off("download-error", handleDownloadError);
     };
-  }, [tracks, navigate]);
+  }, [tracks, navigate, id]);
+
+  useEffect(() => {
+    if (completed.length > 0 && completed.every(Boolean)) {
+      navigate("/tracks", { state: { id } });
+    }
+  }, [completed, id, navigate]);
 
   if (!tracks.length) return null;
 
