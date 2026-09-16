@@ -63,7 +63,37 @@ SpotiLoad is a full-stack application for fetching public Spotify metadata and d
 - FFmpeg
 - Internet access
 
+For the Docker setup, install Docker Desktop instead of installing Node.js,
+Python, and FFmpeg locally.
+
+### Run with Docker
+
+From the project root, build and start both services:
+
+```bash
+docker compose up --build
+```
+
+Open the application at [http://localhost:3000](http://localhost:3000).
+The backend API is available at [http://localhost:8000](http://localhost:8000).
+
+To stop the services, press `Ctrl+C`, or run:
+
+```bash
+docker compose down
+```
+
+To rebuild the images after changing dependencies or Docker configuration:
+
+```bash
+docker compose build --no-cache
+docker compose up
+```
+
 ### Step-by-step Instructions
+
+The following instructions run the services directly on the host and are
+intended for local development without Docker.
 
 ```bash
 git clone https://github.com/yourusername/Spotify-Downloader.git
